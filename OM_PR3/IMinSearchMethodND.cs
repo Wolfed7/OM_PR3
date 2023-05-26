@@ -1,7 +1,7 @@
-﻿namespace OM_PR2;
+﻿namespace OM_PR3;
 
 public interface IMinSearchMethodND
 {
    PointND Min { get; }
-   public void Compute(PointND startPoint, IFunction function);
+   public void Compute(PointND startPoint, ITask function, (StrategyTypes, double)? strategy);
 }

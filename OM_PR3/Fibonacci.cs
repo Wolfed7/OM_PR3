@@ -1,4 +1,4 @@
-﻿namespace OM_PR2;
+﻿namespace OM_PR3;
 
 public class Fibonacci : IMinSearchMethod1D
 {
@@ -9,7 +9,7 @@ public class Fibonacci : IMinSearchMethod1D
    public Fibonacci(double eps)
        => Eps = eps;
 
-   public void Compute(IFunction function, Interval interval, PointND direction, PointND point)
+   public void Compute(ITask function, Interval interval, PointND direction, PointND point)
    {
       int n = 1;
       double Fn_2;
@@ -21,8 +21,8 @@ public class Fibonacci : IMinSearchMethod1D
       double x1 = interval.LeftBoundary + BinetRatio(n) / Fn_2 * interval.Length;
       double x2 = interval.LeftBoundary + BinetRatio(n + 1) / Fn_2 * interval.Length;
 
-      double f1 = function.Compute(point + x1 * direction);
-      double f2 = function.Compute(point + x2 * direction);
+      double f1 = function.Function(point + x1 * direction);
+      double f2 = function.Function(point + x2 * direction);
 
       // temp
       double previousLength = interval.Length;
@@ -46,7 +46,7 @@ public class Fibonacci : IMinSearchMethod1D
             f2 = f1;
             //x1 = interval.LeftBoundary + (interval.RightBoundary - x2);
             x1 = interval.LeftBoundary + BinetRatio(n - k + 1) / BinetRatio(n - k + 3) * interval.Length;
-            f1 = function.Compute(point + x1 * direction);
+            f1 = function.Function(point + x1 * direction);
          }
          else 
          {
@@ -55,7 +55,7 @@ public class Fibonacci : IMinSearchMethod1D
             f1 = f2;
             //x2 = interval.RightBoundary - (x1 - interval.LeftBoundary);
             x2 = interval.LeftBoundary + BinetRatio(n - k + 2) / BinetRatio(n - k + 3) * interval.Length;
-            f2 = function.Compute(point + x2 * direction);
+            f2 = function.Function(point + x2 * direction);
          }
 
          FunctionCount += 1;

@@ -1,4 +1,4 @@
-﻿namespace OM_PR2;
+﻿namespace OM_PR3;
 
 public class QuadraticInterpolation : IMinSearchMethod1D
 {
@@ -11,7 +11,7 @@ public class QuadraticInterpolation : IMinSearchMethod1D
    public QuadraticInterpolation(double eps)
        => Eps = eps;
 
-   public void Compute(IFunction function, Interval interval, PointND direction, PointND point)
+   public void Compute(ITask function, Interval interval, PointND direction, PointND point)
    {
       double f0, f1, f2, xk, x1, x2, b, c;
       int iters;
@@ -23,9 +23,9 @@ public class QuadraticInterpolation : IMinSearchMethod1D
          x1 = x0 - step;
          x2 = x0 + step;
 
-         f0 = function.Compute(point + x0 * direction);
-         f1 = function.Compute(point + x1 * direction);
-         f2 = function.Compute(point + x2 * direction);
+         f0 = function.Function(point + x0 * direction);
+         f1 = function.Function(point + x1 * direction);
+         f2 = function.Function(point + x2 * direction);
          FunctionComputingCounter += 3;
 
          //b = (-f1 * (2 * x0 + step) + 4 * f0 * x0 - f2 * (2 * x0 - step)) / (2 * step * step);

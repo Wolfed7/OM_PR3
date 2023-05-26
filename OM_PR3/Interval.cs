@@ -1,4 +1,4 @@
-﻿namespace OM_PR2;
+﻿namespace OM_PR3;
 
 public class Interval
 {

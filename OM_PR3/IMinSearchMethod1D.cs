@@ -1,7 +1,7 @@
-﻿namespace OM_PR2;
+﻿namespace OM_PR3;
 
 public interface IMinSearchMethod1D
 {
    public double Min { get; }
-   public void Compute(IFunction function, Interval interval, PointND argument, PointND direction);
+   public void Compute(ITask function, Interval interval, PointND argument, PointND direction);
 }

@@ -1,7 +1,9 @@
-﻿using System.Globalization;
+﻿using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace OM_PR2;
+namespace OM_PR3;
 
 public class SimplexMethod : IMinSearchMethodND
 {
@@ -26,7 +28,7 @@ public class SimplexMethod : IMinSearchMethodND
       _simplex = new PointND[0];
    }
 
-   public void Compute(PointND startPoint, IFunction function)
+   public void Compute(PointND startPoint, ITask task, (StrategyTypes, double)? strategy)
    {
       int PointDimension = startPoint.Dimention;
       int SimplexSize = PointDimension + 1;
@@ -66,7 +68,7 @@ public class SimplexMethod : IMinSearchMethodND
 
       for (iters = 0; iters < MaxIters; iters++)
       {
-         _simplex = _simplex.OrderBy(function.Compute).ToArray();
+         _simplex = _simplex.OrderBy(val => task.Function(val) + task.Penalty(val)).ToArray();
          xc.Fill(0);
 
          // Центр тяжести = сумма всех векторов (не скалярка), кроме xh 
@@ -74,31 +76,50 @@ public class SimplexMethod : IMinSearchMethodND
             for (int j = 0; j < PointDimension; j++)
                xc[i] += _simplex[j][i] / PointDimension;
 
-         if (iters == 0)
-         {
-            coords.Add(startPoint);
-         }
-         else
-         {
-            //coords.Add((PointND)xc.Clone());
-            coords.Add((PointND)_simplex[0].Clone());
-         }
-         funcs.Add(function.Compute(xc));
+         //if (iters == 0)
+         //{
+         //   coords.Add(startPoint);
+         //}
+         //else
+         //{
+         //   //coords.Add((PointND)xc.Clone());
+         //   coords.Add((PointND)_simplex[0].Clone());
+         //}
+         //funcs.Add(task.Function(xc));
 
          // Выйдем, если достигли заданной точности.
-         if (IsAccuracyAchieved(_simplex, xc, function))
+         if (IsAccuracyAchieved(_simplex, xc, task) && task.Penalty(_simplex[0]) < Eps)
          {
             _min = _simplex[0]; //xc
             break;
          }
 
+
+
+         if (iters != 0)
+         {
+            if (strategy is not null)
+            {
+               task.Coef = strategy.Value.Item1 switch
+               {
+                  StrategyTypes.Mult => task.Coef *= strategy.Value.Item2,
+                  StrategyTypes.Add => task.Coef == 0 ? 0 : task.Coef += strategy.Value.Item2,
+                  StrategyTypes.Div => task.Coef /= strategy.Value.Item2,
+
+                  _ => throw new InvalidEnumArgumentException($"This type of coefficient change strategy does not exist: {nameof(strategy.Value.Item1)}")
+               };
+            }
+         }
+
+
+
          // Отразим наибольшую точку относительно центра тяжести.
          xr = Reflection(_simplex, xc);
 
-         double fr = function.Compute(xr); // Новое значение функции.
-         double fl = function.Compute(_simplex[0]); // Худшее значение функции.
-         double fg = function.Compute(_simplex[PointDimension - 1]);
-         double fh = function.Compute(_simplex[PointDimension]);
+         double fr = task.Function(xr) + task.Penalty(xr); // Новое значение функции.
+         double fl = task.Function(_simplex[0]) + task.Penalty(_simplex[0]); // Худшее значение функции.
+         double fg = task.Function(_simplex[PointDimension - 1]) + task.Penalty(_simplex[PointDimension - 1]);
+         double fh = task.Function(_simplex[PointDimension]) + task.Penalty(_simplex[PointDimension]);
 
          if (fl < fr && fr < fg)
          {
@@ -110,7 +131,7 @@ public class SimplexMethod : IMinSearchMethodND
             xe = Expansion(xc, xr);
 
             // fe < fr
-            if (function.Compute(xe) < fr)
+            if (task.Function(xe) + task.Penalty(xe) < fr)
                _simplex[PointDimension] = (PointND)xe.Clone();
             else
                _simplex[PointDimension] = (PointND)xr.Clone();
@@ -123,7 +144,7 @@ public class SimplexMethod : IMinSearchMethodND
             xg = OutsideContraction(xc, xr);
 
             // fg < fr - сжимаем ещё сильнее
-            if (function.Compute(xg) < fr)
+            if (task.Function(xg) + task.Penalty(xg) < fr)
                _simplex[PointDimension] = (PointND)xg.Clone();
             // Иначе глобально сжимаем симплекс к наименьшей точке.
             else
@@ -134,47 +155,48 @@ public class SimplexMethod : IMinSearchMethodND
             // Не меняем xr и наибольший элемент симплекса, делаем сжатие.
             xg = InsideContraction(_simplex, xc);
 
-            if (function.Compute(xg) < fh)
+            if (task.Function(xg) + task.Penalty(xg) < fh)
                _simplex[PointDimension] = (PointND)xg.Clone();
             else
                Shrink(_simplex);
          }
       }
 
-      for (int i = 1; i <= iters; i++)
-         dirs.Add(coords[i] - coords[i - 1]); // Направление поиска минимума.
+      //for (int i = 1; i <= iters; i++)
+      //   dirs.Add(coords[i] - coords[i - 1]); // Направление поиска минимума.
 
-      for (int i = 0; i < iters; i++)
-      {
-         double crn =
-            Math.Acos
-            (
-             (coords[i][0] * dirs[i][0] + coords[i][1] * dirs[i][1])
-             / (Norm(coords[i]) * Norm(dirs[i]))
-            );
-         corner.Add(crn); // Угл гугл хехе.
-      }
+      //for (int i = 0; i < iters; i++)
+      //{
+      //   double crn =
+      //      Math.Acos
+      //      (
+      //       (coords[i][0] * dirs[i][0] + coords[i][1] * dirs[i][1])
+      //       / (Norm(coords[i]) * Norm(dirs[i]))
+      //      );
+      //   corner.Add(crn); // Угл гугл хехе.
+      //}
 
 
-      var sw = new StreamWriter("coords.txt");
-      using (sw)
-      {
-         for (int i = 0; i < coords.Count; i++)
-            sw.WriteLine(coords[i]);
-      }
-      _min = _simplex[0];
+      //var sw = new StreamWriter("coords.txt");
+      //using (sw)
+      //{
+      //   for (int i = 0; i < coords.Count; i++)
+      //      sw.WriteLine(coords[i]);
+      //}
+      //_min = _simplex[0];
 
-      Output(coords, funcs, dirs, corner, iters, FunctionsCalcs);
+      //Output(coords, funcs, dirs, corner, iters, FunctionsCalcs);
    }
 
-   private bool IsAccuracyAchieved(PointND[] Simplex, PointND xc, IFunction function)
+   private bool IsAccuracyAchieved(PointND[] Simplex, PointND xc, ITask task)
    {
       double sum = 0;
+      double valueAtXc = task.Function(xc) + task.Penalty(xc);
 
       for (int i = 0; i < xc.Dimention + 1; i++)
       {
-         sum += (function.Compute(Simplex[i]) - function.Compute(xc)) *
-                (function.Compute(Simplex[i]) - function.Compute(xc));
+         double valueAtPoint = task.Function(Simplex[i]) + task.Penalty(Simplex[i]);
+         sum += (valueAtPoint - valueAtXc) * (valueAtPoint - valueAtXc);
       }
 
       return Math.Sqrt(sum / (xc.Dimention + 1)) < Eps;
@@ -197,6 +219,7 @@ public class SimplexMethod : IMinSearchMethodND
       for (int i = 1; i <= Simplex[0].Dimention; i++)
          Simplex[i] = (PointND)(Simplex[0] + (Simplex[i] - Simplex[0]) / 2).Clone();
    }
+
    private static double Norm(PointND arg)
    {
       double result = 0;

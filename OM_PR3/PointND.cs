@@ -1,4 +1,4 @@
-﻿namespace OM_PR2;
+﻿namespace OM_PR3;
 
 // Класс N - мерной точки (является аргументом многомерной функций)
 public class PointND
