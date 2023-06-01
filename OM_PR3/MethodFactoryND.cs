@@ -17,7 +17,9 @@ public class MethodFactoryND
 
    public void Compute()
       => _minSearchMethod.Compute(_startPoint, _function, _strategy);
-   
+
+   public int GetFCALCS()
+      => _minSearchMethod.FCALCS;
    public PointND GetMinPoint() 
       => _minSearchMethod.Min;
    public void SetMinSearchMethod(IMinSearchMethodND method) 

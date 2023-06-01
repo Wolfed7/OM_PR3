@@ -56,7 +56,6 @@ class TaskA : ITask
          default:
             return 0;
       }
-
    }
 
    // 1 - x - y <= 0
